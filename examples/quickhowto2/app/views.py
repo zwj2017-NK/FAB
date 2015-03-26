@@ -116,6 +116,15 @@ class GroupModelView(ModelView):
     list_columns = ['name', 'extra_col', 'extra_col2']
 
 
+class ContactExpView(ModelView):
+    datamodel = SQLAInterface(Contact)
+    route_base = '/project/<group_id>'
+    list_columns = ['name', 'personal_celphone', 'birthday', 'contact_group.name']
+
+    @expose('/cenas')
+    def cenas(self):
+        return "CENAS"
+
 class FloatModelView(ModelView):
     datamodel = SQLAInterface(FloatModel)
 
@@ -184,5 +193,21 @@ appbuilder.add_view(ProductView, "List Products", icon="fa-envelope", category="
 appbuilder.add_link("ContacModelView_lnk","ContactModelView.add", icon="fa-envelope", label="Add Contact")
 appbuilder.add_view(TestForm, "My form View", icon="fa-group", label='My Test form')
 
+expview = appbuilder.add_view(ContactExpView, "Exp View")
+
 appbuilder.add_link("Index","MyIndexView.index")
 appbuilder.security_cleanup()
+
+@expview.blueprint.url_value_preprocessor
+def get_group_id(endpoint, values):
+    print "PRE PROC"
+    group_id = values.pop('group_id')
+    g.group_id = group_id
+
+@expview.blueprint.url_defaults
+def add_group(endpoint, values):
+    print "DEFAULTS"
+    if 'group_id' in values or not g.group_id:
+        return
+    values['group_id'] = g.group_id
+
