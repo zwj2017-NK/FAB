@@ -1,5 +1,5 @@
 import calendar
-from flask import redirect, flash, url_for, Markup
+from flask import redirect, flash, url_for, Markup, g, Blueprint
 from .forms import TestForm
 from flask_appbuilder._compat import as_unicode
 from flask_appbuilder import ModelView, GroupByChartView, aggregate_count, action, expose
@@ -116,14 +116,32 @@ class GroupModelView(ModelView):
     list_columns = ['name', 'extra_col', 'extra_col2']
 
 
+def add_group_id(endpoint, values):
+    print "ROROROR"
+    if 'group_id' in values or not g.group_id:
+        return
+    values['group_id'] = 1
+
+
+def add_language_code(self, endpoint, values):
+    print "ADD"
+    if 'lang_code' in g: values.setdefault('lang_code', g.lang_code)
+
+def pull_lang_code(self, endpoint, values):
+    g.lang_code = values.pop('lang_code')
+    print "PULL", g.lang_code
+
+
 class ContactExpView(ModelView):
-    datamodel = SQLAInterface(Contact)
-    route_base = '/project/<group_id>'
+    datamodel = SQLAInterface(Contact, db.session)
+    route_base = '/project/<lang_code>'
     list_columns = ['name', 'personal_celphone', 'birthday', 'contact_group.name']
+    url_value_preprocessors = pull_lang_code
+    url_defaults = add_language_code
 
     @expose('/cenas')
     def cenas(self):
-        return "CENAS"
+        return "CENAS " + g.lang_code
 
 class FloatModelView(ModelView):
     datamodel = SQLAInterface(FloatModel)
@@ -195,19 +213,28 @@ appbuilder.add_view(TestForm, "My form View", icon="fa-group", label='My Test fo
 
 expview = appbuilder.add_view(ContactExpView, "Exp View")
 
-appbuilder.add_link("Index","MyIndexView.index")
+appbuilder.add_link("Index", "MyIndexView.index")
 appbuilder.security_cleanup()
 
-@expview.blueprint.url_value_preprocessor
-def get_group_id(endpoint, values):
-    print "PRE PROC"
-    group_id = values.pop('group_id')
-    g.group_id = group_id
+print expview
 
-@expview.blueprint.url_defaults
-def add_group(endpoint, values):
-    print "DEFAULTS"
-    if 'group_id' in values or not g.group_id:
-        return
-    values['group_id'] = g.group_id
 
+bp = Blueprint('frontend', __name__, url_prefix='/front/<lang_code>')
+
+
+@bp.route('/')
+def index():
+    return "OK " + g.lang_code
+
+@bp.url_defaults
+def add_language_code(endpoint, values):
+    print "ADD"
+    values.setdefault('lang_code', g.lang_code)
+
+@bp.url_value_preprocessor
+def pull_lang_code(endpoint, values):
+    g.lang_code = values.pop('lang_code')
+    print "PULL", g.lang_code
+
+
+appbuilder.get_app.register_blueprint(bp)
