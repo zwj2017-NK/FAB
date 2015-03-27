@@ -40,10 +40,6 @@ class BaseView(object):
     blueprint = None
     endpoint = None
 
-    url_value_preprocessors = None
-    url_defaults = None
-
-
     route_base = None
     """ Override this if you want to define your own relative url """
 
@@ -115,13 +111,6 @@ class BaseView(object):
                                        url_prefix=self.route_base,
                                        template_folder=self.template_folder,
                                        static_folder=static_folder)
-
-        if self.url_value_preprocessors:
-            self.blueprint.record_once(lambda s: s.app.url_value_preprocessors
-            .setdefault(self.blueprint.name, []).append(self.url_value_preprocessors))
-        if self.url_defaults:
-            self.blueprint.record_once(lambda s: s.app.url_default_functions
-            .setdefault(self.blueprint.name, []).append(self.url_defaults))
         self._register_urls()
         return self.blueprint
 

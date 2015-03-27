@@ -11,7 +11,7 @@ from flask_appbuilder.widgets import ListThumbnail
 from flask_appbuilder.models.generic import PSModel
 from flask_appbuilder.models.sqla.filters import FilterStartsWith, FilterEqualFunction as FA
 
-from app import db, appbuilder
+from app import db, appbuilder, app
 from .models import ContactGroup, Gender, Contact, FloatModel, Product, ProductManufacturer, ProductModel
 
 
@@ -123,21 +123,11 @@ def add_group_id(endpoint, values):
     values['group_id'] = 1
 
 
-def add_language_code(self, endpoint, values):
-    print "ADD"
-    if 'lang_code' in g: values.setdefault('lang_code', g.lang_code)
-
-def pull_lang_code(self, endpoint, values):
-    g.lang_code = values.pop('lang_code')
-    print "PULL", g.lang_code
-
 
 class ContactExpView(ModelView):
     datamodel = SQLAInterface(Contact, db.session)
     route_base = '/project/<lang_code>'
     list_columns = ['name', 'personal_celphone', 'birthday', 'contact_group.name']
-    url_value_preprocessors = pull_lang_code
-    url_defaults = add_language_code
 
     @expose('/cenas')
     def cenas(self):
@@ -216,25 +206,17 @@ expview = appbuilder.add_view(ContactExpView, "Exp View")
 appbuilder.add_link("Index", "MyIndexView.index")
 appbuilder.security_cleanup()
 
-print expview
 
-
-bp = Blueprint('frontend', __name__, url_prefix='/front/<lang_code>')
-
-
-@bp.route('/')
-def index():
-    return "OK " + g.lang_code
-
-@bp.url_defaults
+@app.url_defaults
 def add_language_code(endpoint, values):
-    print "ADD"
-    values.setdefault('lang_code', g.lang_code)
+    print "ADD " + endpoint + " " + str(values)
+    if (endpoint == 'ContactExpView.cenas'):
+        if 'lang_code' in g: values.setdefault('lang_code', g.lang_code)
+    return values
 
-@bp.url_value_preprocessor
+@app.url_value_preprocessor
 def pull_lang_code(endpoint, values):
-    g.lang_code = values.pop('lang_code')
-    print "PULL", g.lang_code
+    print "PRE " + endpoint + " " + str(values)
+    if (endpoint == 'ContactExpView.cenas'):
+        g.lang_code = values.pop('lang_code')
 
-
-appbuilder.get_app.register_blueprint(bp)
