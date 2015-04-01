@@ -116,23 +116,6 @@ class GroupModelView(ModelView):
     list_columns = ['name', 'extra_col', 'extra_col2']
 
 
-def add_group_id(endpoint, values):
-    print "ROROROR"
-    if 'group_id' in values or not g.group_id:
-        return
-    values['group_id'] = 1
-
-
-
-class ContactExpView(ModelView):
-    datamodel = SQLAInterface(Contact, db.session)
-    route_base = '/project/<lang_code>'
-    list_columns = ['name', 'personal_celphone', 'birthday', 'contact_group.name']
-
-    @expose('/cenas')
-    def cenas(self):
-        return "CENAS " + g.lang_code
-
 class FloatModelView(ModelView):
     datamodel = SQLAInterface(FloatModel)
 
@@ -201,22 +184,7 @@ appbuilder.add_view(ProductView, "List Products", icon="fa-envelope", category="
 appbuilder.add_link("ContacModelView_lnk","ContactModelView.add", icon="fa-envelope", label="Add Contact")
 appbuilder.add_view(TestForm, "My form View", icon="fa-group", label='My Test form')
 
-expview = appbuilder.add_view(ContactExpView, "Exp View")
-
 appbuilder.add_link("Index", "MyIndexView.index")
 appbuilder.security_cleanup()
 
-
-@app.url_defaults
-def add_language_code(endpoint, values):
-    print "ADD " + endpoint + " " + str(values)
-    if (endpoint == 'ContactExpView.cenas'):
-        if 'lang_code' in g: values.setdefault('lang_code', g.lang_code)
-    return values
-
-@app.url_value_preprocessor
-def pull_lang_code(endpoint, values):
-    print "PRE " + endpoint + " " + str(values)
-    if (endpoint == 'ContactExpView.cenas'):
-        g.lang_code = values.pop('lang_code')
 
